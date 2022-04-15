@@ -16,6 +16,7 @@ class KMeansClustering:
         """
         self.K = K
         self.initr = initializer
+        self.centroids = None 
 
 
     def random_initializer(self, shape):
@@ -43,6 +44,7 @@ class KMeansClustering:
     def fit(self, X, max_iter = 20):
         """
         for our purpose X consists of only the mobility points.
+        returns classes and inertia value for this fit
         """
         try: 
             X = X.to_numpy()
@@ -64,10 +66,6 @@ class KMeansClustering:
                 distances[:,i] = np.sqrt(np.sum((X-cen)**2, axis=1))
 
             class_index = np.argmin(distances, axis = 1, keepdims=True)
-            # for j in range(self.K):
-            #     centroids[j] = np.sum(X*(class_index==j), axis= 0)/num_samples
-            #     log_centroids[j][iter] = centroids[j]
-            
             
             for j in range(self.K):
                 num_samples_in_class_j = np.sum(class_index==j)
@@ -77,13 +75,28 @@ class KMeansClustering:
                 centroids[j] = np.sum(X*(class_index==j), axis= 0)/num_samples_in_class_j
                 log_centroids[j][iter] = centroids[j]
 
-        self.plot_transition(log_centroids)
-        print(centroids)
-        return class_index 
+        # self.plot_transition(log_centroids)
+        self.centroids = centroids
+        inertia = self.calculate_inertia(X, centroids, class_index)
+        print(f"Inertia for K = {self.K} = {inertia}")
+        return class_index , inertia
 
-    def sum_of_squared_errors(self,data, centroids, classes):
-        pass
-        
+    def calculate_inertia(self,data, centroids, classes):
+        inertia = 0
+        classes = classes.reshape(-1)
+        for i in  range(self.K):
+            cen = centroids[i]
+            samples = data[np.where(classes==i)]
+            dist = np.sqrt(np.sum((samples - cen)**2, axis = 1))
+            inertia += np.sum(dist)
+        return inertia
+
+    def predict(self, point):
+        point = point.reshape(-1,self.K)
+        centroids = self.centroids.reshape(self.K, -1)
+        return np.argmin(np.sum((centroids - point)**2, axis = 1, keepdims = 1))
+    
+
     def plot_transition(self, log_centroids):
         fig, ax = plt.subplots(self.K, 1)
         for i in range(self.K):
@@ -93,12 +106,19 @@ class KMeansClustering:
         if not os.path.exists("./plots"):
             os.makedirs("./plots")
         plt.savefig(f"./plots/Transitions_in_K={self.K}.png")
+        # plt.close()
 
 
 
 if __name__ == "__main__":
-    KMeans = KMeansClustering(K = 2)
     df = pd.read_csv('./data/covid_data_india.csv', index_col = None)
     df = df.iloc[:, 1:7]
-    classes = KMeans.fit(df)
-    print(pd.Series(classes.flatten()).value_counts())
+    inertia_log = []
+    for i in range(1,11):
+        KMeans = KMeansClustering(K = i)
+        classes, inertia = KMeans.fit(df)
+        print(pd.Series(classes.flatten()).value_counts())
+        inertia_log.append(inertia)
+    print(inertia_log)
+    
+    # classes = KMeans.fit(df)
