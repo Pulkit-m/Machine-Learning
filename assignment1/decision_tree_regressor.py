@@ -11,6 +11,7 @@ class DecisionTreeRegressor:
         self.max_depth = max_depth 
         self.min_samples = min_samples
         self.tree_depth = 0 
+        self.tree_structure = None
 
     def get_potential_splits(self, data):
         """
@@ -79,7 +80,7 @@ class DecisionTreeRegressor:
                     best_split_col = col
                     best_split_value = value
                     best_std = std_post_split
-        print("Splitting wrt column {} and value {}; Std Dev reduced from {} to {}".format(best_split_col, best_split_value, std_pre_split, best_std))
+        # print("Splitting wrt column {} and value {}; Std Dev reduced from {} to {}".format(best_split_col, best_split_value, std_pre_split, best_std))
         return best_split_col, best_split_value 
 
     def average_of_target_col(self, data):
@@ -93,7 +94,7 @@ class DecisionTreeRegressor:
             return 0
 
 
-    def build_tree(self,df, depth = 0):
+    def build_tree(self,df,df_type = 'pandas', depth = 0):
         """
         df_type: (string) either "pandas" or "numpy"
         do not touch the depth parameter. It is being used as a counter within the function.
@@ -112,10 +113,12 @@ class DecisionTreeRegressor:
             self.min_samples = 2
         # if no limit is set on max_depth then min_samples will serve as the termination criterion
         if(self.max_depth == None and len(data) < self.min_samples):
+            print("returning a leaf of depth {}".format(depth))
             return self.average_of_target_col(data)
         # when max depth is provided, then both max_depth and min_samples serve as the termination criterion
         # to help max_depth functionality perform better set min_samples to 2
         elif(depth == self.max_depth or len(data) < self.min_samples):
+            print("returning a leaf of depth {}".format(depth))
             return self.average_of_target_col(data)
         
         # recursive cases
@@ -127,8 +130,8 @@ class DecisionTreeRegressor:
             data_above, data_below = self.split_data(data, split_col, split_val)
 
             nodeCondition = "{} <= {}".format(COLUMN_NAMES[split_col], split_val)
-            left_child = self.build_tree(data_above, depth)
-            right_child = self.build_tree(data_below, depth) 
+            left_child = self.build_tree(data_above,'numpy', depth)
+            right_child = self.build_tree(data_below,'numpy', depth) 
 
             if(left_child == right_child):
                 tree = left_child 
@@ -142,9 +145,9 @@ class DecisionTreeRegressor:
         nodeCondition = list(tree.keys())[0]
         attribute, comparator, value = nodeCondition.split(" ")
         if(sample[attribute] <= float(value)):
-            answer = tree[nodeCondition][1]
-        else:
             answer = tree[nodeCondition][0]
+        else:
+            answer = tree[nodeCondition][1]
 
         if isinstance(answer, dict):
             subtree = answer

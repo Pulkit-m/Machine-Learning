@@ -24,7 +24,9 @@ def train_test_split(df, test_size = 10, shuffle = True):
     if shuffle:
         sampled_indexes = np.random.randint(0,num_samples, num_test_samples)
         test_df = df.loc[sampled_indexes]
+        test_df = test_df.sample(frac = 1)
         train_df = df.drop(sampled_indexes)
+        train_df = train_df.sample(frac = 1)
         return train_df, test_df
 
     else:
@@ -33,6 +35,13 @@ def train_test_split(df, test_size = 10, shuffle = True):
         return train_df, test_df
     
     
+def R2_score(predicted_values, actual_values):
+        correlation_matrix = np.corrcoef(predicted_values, actual_values)
+        correlation_xy = correlation_matrix[0,1]
+        r_squared = correlation_xy**2
+        return r_squared  
 
 if __name__ == "__main__":
-    pass 
+    df = pd.read_csv("./data/covid_data_india.csv")
+    train_df, test_df = train_test_split(df)
+    print(train_df.head(), test_df.head())
