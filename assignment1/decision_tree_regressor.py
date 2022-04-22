@@ -6,12 +6,13 @@ import random
 import os
 
 class DecisionTreeRegressor:
-    def __init__(self, df, min_samples = 2, max_depth = None):
+    def __init__(self, df, min_samples = 2, max_depth = None, algo = 'id3'):
         self.df = df 
         self.max_depth = max_depth 
         self.min_samples = min_samples
         self.tree_depth = 0 
         self.tree_structure = None
+        self.algo = algo
 
     def get_potential_splits(self, data):
         """
@@ -39,7 +40,7 @@ class DecisionTreeRegressor:
         data_below = data[data[:,split_col] > split_val]
         return data_above, data_below
 
-    def calculate_std(self, data):
+    def calculate_stddev(self, data):
         """
         data is of form pandas.DataFrame.values. Also data is inclusive of target column
         returns variance and covariance based on the target column
@@ -50,32 +51,52 @@ class DecisionTreeRegressor:
         std_dev = np.std(target)
         covariance = (std_dev/average)*100
         return std_dev, covariance  
-
-    def calculate_overall_std(self, data_above, data_below):
+    
+    def calculate_rss(self, data):
+        """
+        data is of form pandas.DataFrame.values. Also data is inclusive of target column
+        should return the residual sum of squares based on target column
+        """
+        target = data[:,-1]
+        N = len(target)
+        average = np.mean(target)
+        rss = np.sum((target - average)**2)
+        return rss
+        
+    
+    def calculate_overall_score(self, data_above, data_below, algo = "id3"):
         """
         input data of form pandas.DataFrame.values
+        algo(str): can take on two different values: id3 and CART
         returns weighted average of entropies of the input tables
         """
         num_samples_above, num_samples_below = len(data_above), len(data_below)
         total_samples = num_samples_above + num_samples_below
-        std_above, _ = self.calculate_std(data_above)
-        std_below, _ = self.calculate_std(data_below)
-        overall_std = (num_samples_above/total_samples)*std_above + (num_samples_below/total_samples)*std_below
-        return overall_std
+        std_above, _ = self.calculate_stddev(data_above)
+        std_below, _ = self.calculate_stddev(data_below)
+        if algo == 'id3':
+            overall_score = (num_samples_above/total_samples)*std_above + (num_samples_below/total_samples)*std_below
+        elif algo=='CART':
+            overall_score = self.calculate_rss(data_above) + self.calculate_rss(data_below)
+        return overall_score
 
-    def determine_best_split(self, data, potential_splits):
+    def determine_best_split(self, data, potential_splits, algo = "id3"):
         """
         for all columns and for all values of potential splits in every column evaluate 
         the best possible reduction in std_deviation
+        algo = id3 or CART
         """
         best_split_col = None
         best_split_value = None
-        std_pre_split, _ = self.calculate_std(data)
+        if algo == 'id3':
+            std_pre_split, _ = self.calculate_stddev(data)
+        elif algo == 'CART':
+            std_pre_split = self.calculate_rss(data)
         best_std = std_pre_split
         for col in potential_splits.keys():
             for value in potential_splits[col]:
                 data_above, data_below = self.split_data(data, split_col= col, split_val = value)
-                std_post_split = self.calculate_overall_std(data_above, data_below)
+                std_post_split = self.calculate_overall_score(data_above, data_below, algo)
                 if(std_post_split <= best_std):
                     best_split_col = col
                     best_split_value = value
@@ -126,7 +147,7 @@ class DecisionTreeRegressor:
             depth += 1
             self.tree_depth = max(self.tree_depth, depth)
             potential_splits = self.get_potential_splits(data)
-            split_col, split_val = self.determine_best_split(data, potential_splits)
+            split_col, split_val = self.determine_best_split(data, potential_splits, algo = self.algo)
             data_above, data_below = self.split_data(data, split_col, split_val)
 
             nodeCondition = "{} <= {}".format(COLUMN_NAMES[split_col], split_val)
@@ -171,7 +192,6 @@ class DecisionTreeRegressor:
         correlation_xy = correlation_matrix[0,1]
         r_squared = correlation_xy**2
         return r_squared
-
 
 if __name__ == "__main__":
     df = pd.read_csv('./data/covid_data_india.csv' ).iloc[:,1:]
