@@ -96,7 +96,7 @@ class KMeansClustering:
         centroids = self.centroids.reshape(self.K, -1)
         return np.argmin(np.sum((centroids - point)**2, axis = 1, keepdims = 1))
     
-
+    
     def plot_transition(self, log_centroids):
         fig, ax = plt.subplots(self.K, 1)
         for i in range(self.K):
