@@ -8,5 +8,5 @@
 
 ## Part II
 - (*done*) A. Use ID3-A to create trees in the forest 
-- (Pending) B. Use CART to create trees in the forest 
-- (Pending) C. Compare the accuracy and performance of K-Means Forests created using CART and ID3-A for parts A. and B.
+- (*done*) B. Use CART to create trees in the forest 
+- (*done*) C. Compare the accuracy and performance of K-Means Forests created using CART and ID3-A for parts A. and B.
