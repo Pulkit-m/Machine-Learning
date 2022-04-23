@@ -139,7 +139,7 @@ class DecisionTreeRegressor:
         # when max depth is provided, then both max_depth and min_samples serve as the termination criterion
         # to help max_depth functionality perform better set min_samples to 2
         elif(depth == self.max_depth or len(data) < self.min_samples):
-            print("returning a leaf of depth {}".format(depth))
+            # print("returning a leaf of depth {}".format(depth))
             return self.average_of_target_col(data)
         
         # recursive cases

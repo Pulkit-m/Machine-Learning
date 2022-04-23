@@ -4,7 +4,7 @@
 - (*done*) Used Entropy (Std deviation) in place of gini impurity
 - (*done*) for ID3 used Std Dev reduction
 - (*done*) for CART used RSS 
-- (Pending) Compare performance and accuracy of CART and ID3-A
+- (*done*) Compare performance and accuracy of CART and ID3-A
 
 ## Part II
 - (*done*) A. Use ID3-A to create trees in the forest 
